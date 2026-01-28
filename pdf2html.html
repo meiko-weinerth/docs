@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF zu Markdown/HTML Konverter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .drop-zone {
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            padding: 60px 20px;
+            text-align: center;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #007bff;
+            background: #e8f4ff;
+        }
+        .drop-zone p {
+            margin: 0;
+            font-size: 18px;
+            color: #666;
+        }
+        .hidden {
+            display: none;
+        }
+        .editor-container {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 400px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        .button-row {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .info-box h3 {
+            margin-top: 0;
+        }
+        .preview-container {
+            margin-top: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.loading {
+            background: #cce5ff;
+            color: #004085;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: -1px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+        }
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+        }
+        .tab-content {
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 0 5px 5px 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF zu Markdown/HTML Konverter</h1>
+
+    <div id="uploadSection">
+        <div class="drop-zone" id="dropZone">
+            <p>PDF-Datei hier ablegen<br>oder klicken zum Auswahlen</p>
+            <input type="file" id="fileInput" accept=".pdf" class="hidden">
+        </div>
+    </div>
+
+    <div id="statusBox" class="status hidden"></div>
+
+    <div id="editorSection" class="hidden">
+        <div class="info-box">
+            <h3>Anleitung</h3>
+            <ol>
+                <li><strong>Text prufen:</strong> Korrigieren Sie die Lesereihenfolge bei mehrspaltigen Layouts</li>
+                <li><strong>Uberschriften markieren:</strong> Zeilen die mit # beginnen werden zu Uberschriften (# = H1, ## = H2, etc.)</li>
+                <li><strong>Silbentrennungen:</strong> Werden automatisch aufgelost (Wort- am Zeilenende)</li>
+                <li><strong>Konvertieren:</strong> Klicken Sie auf "Zu Markdown konvertieren"</li>
+            </ol>
+        </div>
+
+        <div class="editor-container">
+            <label for="rawText">Extrahierter Text (bearbeitbar):</label>
+            <textarea id="rawText" placeholder="Der extrahierte PDF-Text erscheint hier..."></textarea>
+
+            <div class="button-row">
+                <button class="btn-secondary" onclick="removeHyphens()">Silbentrennungen auflosen</button>
+                <button class="btn-primary" onclick="convertToMarkdown()">Zu Markdown konvertieren</button>
+                <button class="btn-secondary" onclick="resetUpload()">Neue PDF laden</button>
+            </div>
+        </div>
+
+        <div id="markdownSection" class="hidden">
+            <div class="editor-container">
+                <label for="markdownText">Markdown (bearbeitbar):</label>
+                <textarea id="markdownText" placeholder="Das generierte Markdown erscheint hier..."></textarea>
+
+                <div class="button-row">
+                    <button class="btn-success" onclick="generateHTML()">HTML generieren</button>
+                    <button class="btn-primary" onclick="downloadMarkdown()">Markdown herunterladen</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="htmlSection" class="hidden">
+            <div class="editor-container">
+                <label>HTML Vorschau:</label>
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('preview')">Vorschau</div>
+                    <div class="tab" onclick="showTab('source')">Quellcode</div>
+                </div>
+                <div class="tab-content">
+                    <div id="previewTab" class="preview-container"></div>
+                    <textarea id="sourceTab" class="hidden" style="border: none; border-radius: 0;"></textarea>
+                </div>
+
+                <div class="button-row">
+                    <button class="btn-success" onclick="downloadHTML()">HTML herunterladen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PDF.js Worker konfigurieren
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let currentFileName = 'dokument';
+
+        // Drop Zone Event Listener
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                processPDF(file);
+            } else {
+                showStatus('Bitte nur PDF-Dateien hochladen.', 'error');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                processPDF(file);
+            }
+        });
+
+        // PDF verarbeiten
+        async function processPDF(file) {
+            currentFileName = file.name.replace('.pdf', '');
+            showStatus('PDF wird verarbeitet...', 'loading');
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                let fullText = '';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    showStatus(`Seite ${i} von ${pdf.numPages} wird extrahiert...`, 'loading');
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+
+                    // Text-Items nach Position sortieren (oben nach unten, links nach rechts)
+                    const items = textContent.items.map(item => ({
+                        text: item.str,
+                        x: item.transform[4],
+                        y: item.transform[5],
+                        height: item.height
+                    }));
+
+                    // Nach Y-Position gruppieren (Zeilen erkennen)
+                    const lines = [];
+                    let currentLine = [];
+                    let lastY = null;
+                    const lineThreshold = 5;
+
+                    // Sortiere nach Y (absteigend) dann X (aufsteigend)
+                    items.sort((a, b) => {
+                        if (Math.abs(a.y - b.y) < lineThreshold) {
+                            return a.x - b.x;
+                        }
+                        return b.y - a.y;
+                    });
+
+                    for (const item of items) {
+                        if (lastY === null || Math.abs(item.y - lastY) < lineThreshold) {
+                            currentLine.push(item);
+                        } else {
+                            if (currentLine.length > 0) {
+                                currentLine.sort((a, b) => a.x - b.x);
+                                lines.push(currentLine.map(i => i.text).join(' '));
+                            }
+                            currentLine = [item];
+                        }
+                        lastY = item.y;
+                    }
+
+                    if (currentLine.length > 0) {
+                        currentLine.sort((a, b) => a.x - b.x);
+                        lines.push(currentLine.map(i => i.text).join(' '));
+                    }
+
+                    fullText += lines.join('\n') + '\n\n--- Seite ' + i + ' ---\n\n';
+                }
+
+                document.getElementById('rawText').value = fullText;
+                document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('editorSection').classList.remove('hidden');
+                showStatus('PDF erfolgreich extrahiert! Bitte prufen und bearbeiten Sie den Text.', 'success');
+
+            } catch (error) {
+                showStatus('Fehler beim Verarbeiten der PDF: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        // Silbentrennungen auflosen
+        function removeHyphens() {
+            const textarea = document.getElementById('rawText');
+            let text = textarea.value;
+
+            // Silbentrennungen am Zeilenende auflosen (Wort- gefolgt von Zeilenumbruch)
+            text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
+
+            // Doppelte Leerzeichen entfernen
+            text = text.replace(/  +/g, ' ');
+
+            textarea.value = text;
+            showStatus('Silbentrennungen wurden aufgelost.', 'success');
+        }
+
+        // Zu Markdown konvertieren
+        function convertToMarkdown() {
+            const rawText = document.getElementById('rawText').value;
+            let markdown = rawText;
+
+            // Seitenmarkierungen entfernen
+            markdown = markdown.replace(/\n*--- Seite \d+ ---\n*/g, '\n\n');
+
+            // Mehrfache Leerzeilen reduzieren
+            markdown = markdown.replace(/\n{3,}/g, '\n\n');
+
+            // Einfache Absatzerkennung
+            const lines = markdown.split('\n');
+            const processedLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+
+                // Leere Zeilen beibehalten
+                if (line === '') {
+                    processedLines.push('');
+                    continue;
+                }
+
+                // Zeilen die bereits mit # beginnen, beibehalten
+                if (line.startsWith('#')) {
+                    processedLines.push(line);
+                    continue;
+                }
+
+                // Potenzielle Uberschriften erkennen (kurze Zeilen in Grossbuchstaben oder mit Nummer am Anfang)
+                if (line.length < 80 && (line === line.toUpperCase() || /^\d+[\.\)]\s/.test(line))) {
+                    // Als potenzielle Uberschrift markieren (Benutzer kann # hinzufugen)
+                    processedLines.push(line);
+                } else {
+                    processedLines.push(line);
+                }
+            }
+
+            markdown = processedLines.join('\n');
+
+            // Aufzahlungen erkennen und formatieren
+            markdown = markdown.replace(/^[\u2022\u2023\u25E6\u2043\u2219]\s*/gm, '- ');
+            markdown = markdown.replace(/^(\d+)\.\s+/gm, '$1. ');
+
+            document.getElementById('markdownText').value = markdown;
+            document.getElementById('markdownSection').classList.remove('hidden');
+            showStatus('Markdown wurde generiert. Bearbeiten Sie es nach Bedarf und fugen Sie Uberschriften mit # hinzu.', 'success');
+        }
+
+        // HTML generieren
+        function generateHTML() {
+            const markdown = document.getElementById('markdownText').value;
+            const lines = markdown.split('\n');
+
+            let htmlContent = '';
+            let toc = [];
+            let headingCounter = 0;
+            let currentParagraph = [];
+            let inList = false;
+            let listType = '';
+
+            function flushParagraph() {
+                if (currentParagraph.length > 0) {
+                    const text = currentParagraph.join(' ').trim();
+                    if (text) {
+                        htmlContent += `<p>${escapeHtml(text)}</p>\n`;
+                    }
+                    currentParagraph = [];
+                }
+            }
+
+            function closeList() {
+                if (inList) {
+                    htmlContent += listType === 'ul' ? '</ul>\n' : '</ol>\n';
+                    inList = false;
+                    listType = '';
+                }
+            }
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                // Uberschriften
+                const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+                if (headingMatch) {
+                    flushParagraph();
+                    closeList();
+
+                    const level = headingMatch[1].length;
+                    const text = headingMatch[2].trim();
+                    const id = 'section-' + (++headingCounter);
+
+                    // Nur H1 und H2 ins Inhaltsverzeichnis
+                    if (level <= 2) {
+                        toc.push({ id, text, level });
+                        htmlContent += `<h${level} id="${id}">${escapeHtml(text)}</h${level}>\n`;
+
+                        // Rucksprung-Link nach dem Abschnitt (vor der nachsten Uberschrift oder am Ende)
+                        // Wir fugen den Link spater hinzu
+                    } else {
+                        htmlContent += `<h${level}>${escapeHtml(text)}</h${level}>\n`;
+                    }
+                    continue;
+                }
+
+                // Ungeordnete Listen
+                if (line.match(/^[-*]\s+/)) {
+                    flushParagraph();
+                    if (!inList || listType !== 'ul') {
+                        closeList();
+                        htmlContent += '<ul>\n';
+                        inList = true;
+                        listType = 'ul';
+                    }
+                    htmlContent += `<li>${escapeHtml(line.replace(/^[-*]\s+/, ''))}</li>\n`;
+                    continue;
+                }
+
+                // Geordnete Listen
+                if (line.match(/^\d+\.\s+/)) {
+                    flushParagraph();
+                    if (!inList || listType !== 'ol') {
+                        closeList();
+                        htmlContent += '<ol>\n';
+                        inList = true;
+                        listType = 'ol';
+                    }
+                    htmlContent += `<li>${escapeHtml(line.replace(/^\d+\.\s+/, ''))}</li>\n`;
+                    continue;
+                }
+
+                closeList();
+
+                // Leere Zeilen
+                if (line.trim() === '') {
+                    flushParagraph();
+                    continue;
+                }
+
+                // Normaler Text
+                currentParagraph.push(line);
+            }
+
+            flushParagraph();
+            closeList();
+
+            // Rucksprung-Links einfugen
+            let htmlWithBacklinks = '';
+            const htmlLines = htmlContent.split('\n');
+
+            for (let i = 0; i < htmlLines.length; i++) {
+                htmlWithBacklinks += htmlLines[i] + '\n';
+
+                // Prufen ob nachste Zeile eine H1 oder H2 ist oder Ende
+                const currentIsMainHeading = htmlLines[i].match(/^<h[12]\s/);
+                const nextIsMainHeading = htmlLines[i + 1] && htmlLines[i + 1].match(/^<h[12]\s/);
+                const isLastContent = i === htmlLines.length - 1 ||
+                    (i === htmlLines.length - 2 && htmlLines[i + 1].trim() === '');
+
+                if (currentIsMainHeading && i > 0) {
+                    // Finde den Index dieser Uberschrift
+                    const match = htmlLines[i].match(/id="(section-\d+)"/);
+                    if (match) {
+                        const idx = toc.findIndex(t => t.id === match[1]);
+                        if (idx > 0) {
+                            // Rucksprung-Link vor dieser Uberschrift einfugen
+                            htmlWithBacklinks = htmlWithBacklinks.slice(0, -htmlLines[i].length - 1) +
+                                '<p><a href="#toc">Zum Inhaltsverzeichnis</a></p>\n\n' +
+                                htmlLines[i] + '\n';
+                        }
+                    }
+                }
+            }
+
+            // Letzten Rucksprung-Link hinzufugen
+            if (toc.length > 0) {
+                htmlWithBacklinks += '\n<p><a href="#toc">Zum Inhaltsverzeichnis</a></p>\n';
+            }
+
+            // Inhaltsverzeichnis erstellen
+            let tocHtml = '<nav id="toc">\n<h2>Inhaltsverzeichnis</h2>\n<ul>\n';
+            for (const item of toc) {
+                const indent = item.level === 2 ? '  ' : '';
+                tocHtml += `${indent}<li><a href="#${item.id}">${escapeHtml(item.text)}</a></li>\n`;
+            }
+            tocHtml += '</ul>\n</nav>\n\n';
+
+            // Komplettes HTML-Dokument
+            const fullHtml = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(currentFileName)}</title>
+</head>
+<body>
+
+${tocHtml}${htmlWithBacklinks}
+</body>
+</html>`;
+
+            document.getElementById('sourceTab').value = fullHtml;
+            document.getElementById('previewTab').innerHTML = tocHtml + htmlWithBacklinks;
+            document.getElementById('htmlSection').classList.remove('hidden');
+            showStatus('HTML wurde generiert!', 'success');
+        }
+
+        // HTML escapen
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Tab wechseln
+        function showTab(tab) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+
+            if (tab === 'preview') {
+                tabs[0].classList.add('active');
+                document.getElementById('previewTab').classList.remove('hidden');
+                document.getElementById('sourceTab').classList.add('hidden');
+            } else {
+                tabs[1].classList.add('active');
+                document.getElementById('previewTab').classList.add('hidden');
+                document.getElementById('sourceTab').classList.remove('hidden');
+            }
+        }
+
+        // Markdown herunterladen
+        function downloadMarkdown() {
+            const content = document.getElementById('markdownText').value;
+            downloadFile(content, currentFileName + '.md', 'text/markdown');
+        }
+
+        // HTML herunterladen
+        function downloadHTML() {
+            const content = document.getElementById('sourceTab').value;
+            downloadFile(content, currentFileName + '.html', 'text/html');
+        }
+
+        // Datei herunterladen
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Reset fur neue PDF
+        function resetUpload() {
+            document.getElementById('uploadSection').classList.remove('hidden');
+            document.getElementById('editorSection').classList.add('hidden');
+            document.getElementById('markdownSection').classList.add('hidden');
+            document.getElementById('htmlSection').classList.add('hidden');
+            document.getElementById('rawText').value = '';
+            document.getElementById('markdownText').value = '';
+            document.getElementById('sourceTab').value = '';
+            document.getElementById('previewTab').innerHTML = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('statusBox').classList.add('hidden');
+        }
+
+        // Status anzeigen
+        function showStatus(message, type) {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.textContent = message;
+            statusBox.className = 'status ' + type;
+            statusBox.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
