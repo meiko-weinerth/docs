@@ -89,6 +89,7 @@
             margin-top: 0;
         }
 
+        /* Desktop Tabelle */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -104,7 +105,7 @@
             padding: 12px 10px;
             text-align: left;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border: 1px solid #e1dfdb;
@@ -122,7 +123,7 @@
         td {
             padding: 10px;
             border: 1px solid #e1dfdb;
-            vertical-align: top;
+            vertical-align: middle;
         }
 
         tr:hover {
@@ -133,19 +134,10 @@
             font-weight: 500;
         }
 
-        .product-details {
-            font-size: 11px;
-            color: #666;
-            margin-top: 3px;
-        }
-
         .rating {
             font-size: 11px;
             color: #888;
-        }
-
-        .price {
-            white-space: nowrap;
+            margin-top: 2px;
         }
 
         .price-original {
@@ -157,6 +149,11 @@
         .price-offer {
             font-weight: 600;
             color: #333;
+        }
+
+        .price-per-liter {
+            font-size: 11px;
+            color: #666;
         }
 
         .discount {
@@ -255,6 +252,105 @@
             background: #555;
         }
 
+        /* Mobile Card Layout */
+        .mobile-cards {
+            display: none;
+        }
+
+        .product-card {
+            border: 1px solid #e1dfdb;
+            margin-bottom: -1px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+            gap: 0;
+        }
+
+        .product-card:hover {
+            background: #fafafa;
+        }
+
+        .card-main {
+            padding: 12px;
+            grid-column: 1;
+            grid-row: 1 / 3;
+            border-right: 1px solid #e1dfdb;
+        }
+
+        .card-row1 {
+            margin-bottom: 8px;
+        }
+
+        .card-nr {
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .card-product {
+            font-weight: 500;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .card-rating {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .card-row2 {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            font-size: 12px;
+            color: #666;
+            padding-top: 8px;
+            border-top: 1px solid #e1dfdb;
+        }
+
+        .card-row2 .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #999;
+            display: block;
+        }
+
+        .card-row2 .value {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .card-row2 .price-original {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 11px;
+        }
+
+        .card-order {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+            grid-column: 2;
+            grid-row: 1 / 3;
+        }
+
+        .card-order input[type="number"] {
+            width: 60px;
+            padding: 10px 5px;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .card-order .line-total {
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Print Styles */
         @media print {
             .actions, .no-print {
                 display: none !important;
@@ -312,28 +408,58 @@
                 page-break-inside: avoid;
                 break-inside: avoid;
             }
+
+            .mobile-cards {
+                display: none !important;
+            }
+
+            .desktop-table {
+                display: block !important;
+            }
         }
 
-        /* PDF-spezifische Styles */
-        .pdf-mode table {
-            font-size: 11px;
-        }
-
-        .pdf-mode .rating {
-            font-size: 9px;
-        }
-
+        /* Mobile Styles */
         @media (max-width: 900px) {
-            table {
-                font-size: 12px;
+            body {
+                padding: 10px;
             }
 
-            th, td {
-                padding: 8px 6px;
+            h1 {
+                font-size: 22px;
             }
 
-            .rating, .product-details {
+            .customer-info {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .desktop-table {
                 display: none;
+            }
+
+            .mobile-cards {
+                display: block;
+            }
+
+            .category-header {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .summary {
+                padding: 15px;
+            }
+
+            .summary-row.total {
+                font-size: 18px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
             }
         }
     </style>
@@ -345,7 +471,7 @@
             <p class="subtitle">Bitte tragen Sie Ihre gewunschte Bestellmenge ein</p>
         </header>
 
-        <div class="customer-info no-print-hide">
+        <div class="customer-info">
             <div>
                 <label for="customerName">Name / Firma</label>
                 <input type="text" id="customerName" placeholder="Ihr Name oder Firmenname">
@@ -389,7 +515,15 @@
     </div>
 
     <script>
-        // Produktdaten
+        // Hilfsfunktion: Literzahl aus Produktname extrahieren
+        function extractLiters(name) {
+            if (name.includes('MATHUSALEM') || name.includes('6-Ltr') || name.includes('6,0-Ltr')) return 6.0;
+            if (name.includes('DMG') || name.includes('3,0-Ltr') || name.includes('3-Ltr')) return 3.0;
+            if (name.includes('MAG') || name.includes('1,5-Ltr')) return 1.5;
+            return 0.75; // Standard-Flasche
+        }
+
+        // Produktdaten mit berechneten Literpreisen
         const products = [
             { nr: "001", category: "Schaumwein", name: "Pinot Rosa Spumante Brut - Le Contesse", rating: "extraprima 89", stock: 72, listPrice: 9.90, offerPrice: 7.90, discount: "20%" },
             { nr: "002", category: "Schaumwein", name: "Prosecco Treviso DOC Spumante Brut Nature - Le Contesse", rating: "extraprima 89", stock: 60, listPrice: 11.90, offerPrice: 9.00, discount: "24%" },
@@ -440,43 +574,55 @@
             { nr: "046", category: "Weisswein | Frankreich", name: "Meursault 1er Cru Chateau de Blagny - Louis Latour 2022", rating: "extraprima 93 | Suckling 95", stock: 12, listPrice: 132.00, offerPrice: 119.00, discount: "10%" },
             { nr: "047", category: "Weisswein | Frankreich", name: "Corton-Charlemagne Grand Cru - Louis Latour 2022", rating: "extraprima 95 | Suckling 99", stock: 14, listPrice: 238.00, offerPrice: 189.00, discount: "21%" },
             { nr: "048", category: "Weisswein | Frankreich", name: "Corton-Charlemagne Grand Cru - Louis Latour 2019 | MAG 1,5-Ltr.", rating: "extraprima 96 | Suckling 98", stock: 4, listPrice: 389.00, offerPrice: 299.00, discount: "23%" }
-        ];
+        ].map(p => ({
+            ...p,
+            liters: extractLiters(p.name),
+            pricePerLiter: p.offerPrice / extractLiters(p.name)
+        }));
 
-        // Tabelle rendern
+        // Tabelle rendern (Desktop + Mobile)
         function renderTable() {
             const container = document.getElementById('orderTable');
-            let html = '';
+            let desktopHtml = '<div class="desktop-table">';
+            let mobileHtml = '<div class="mobile-cards">';
             let currentCategory = '';
 
             products.forEach((product, index) => {
                 // Kategorie-Header
                 if (product.category !== currentCategory) {
                     if (currentCategory !== '') {
-                        html += '</tbody></table>';
+                        desktopHtml += '</tbody></table>';
                     }
                     currentCategory = product.category;
-                    html += `
+
+                    // Desktop Header
+                    desktopHtml += `
                         <div class="category-header">${currentCategory}</div>
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 50px;">Nr.</th>
+                                    <th style="width: 45px;">Nr.</th>
                                     <th>Produkt</th>
-                                    <th style="width: 80px;" class="center">Bestand</th>
-                                    <th style="width: 100px;" class="right">Listenpreis</th>
-                                    <th style="width: 100px;" class="right">Angebot</th>
-                                    <th style="width: 70px;" class="center">Rabatt</th>
-                                    <th style="width: 80px;" class="center">Menge</th>
-                                    <th style="width: 100px;" class="right">Summe</th>
+                                    <th style="width: 60px;" class="center">Bestand</th>
+                                    <th style="width: 75px;" class="right">Listenpr.</th>
+                                    <th style="width: 75px;" class="right">Angebot</th>
+                                    <th style="width: 70px;" class="right">EUR/Ltr.</th>
+                                    <th style="width: 55px;" class="center">Rabatt</th>
+                                    <th style="width: 70px;" class="center">Menge</th>
+                                    <th style="width: 85px;" class="right">Summe</th>
                                 </tr>
                             </thead>
                             <tbody>
                     `;
+
+                    // Mobile Header
+                    mobileHtml += `<div class="category-header">${currentCategory}</div>`;
                 }
 
                 const stockClass = product.stock <= 10 ? 'low' : '';
 
-                html += `
+                // Desktop Row
+                desktopHtml += `
                     <tr>
                         <td>${product.nr}</td>
                         <td>
@@ -484,11 +630,14 @@
                             <div class="rating">${product.rating}</div>
                         </td>
                         <td class="center stock ${stockClass}">${product.stock}</td>
-                        <td class="right price">
+                        <td class="right">
                             <span class="price-original">${formatCurrency(product.listPrice)}</span>
                         </td>
-                        <td class="right price">
+                        <td class="right">
                             <span class="price-offer">${formatCurrency(product.offerPrice)}</span>
+                        </td>
+                        <td class="right">
+                            <span class="price-per-liter">${formatCurrency(product.pricePerLiter)}</span>
                         </td>
                         <td class="center">
                             <span class="discount">${product.discount}</span>
@@ -506,10 +655,58 @@
                         <td class="right line-total" id="total-${index}">-</td>
                     </tr>
                 `;
+
+                // Mobile Card
+                mobileHtml += `
+                    <div class="product-card">
+                        <div class="card-main">
+                            <div class="card-row1">
+                                <div class="card-nr">${product.nr}</div>
+                                <div class="card-product">${product.name}</div>
+                                <div class="card-rating">${product.rating}</div>
+                            </div>
+                            <div class="card-row2">
+                                <div>
+                                    <span class="label">Bestand</span>
+                                    <span class="value ${stockClass}">${product.stock}</span>
+                                </div>
+                                <div>
+                                    <span class="label">Listenpreis</span>
+                                    <span class="price-original">${formatCurrency(product.listPrice)}</span>
+                                </div>
+                                <div>
+                                    <span class="label">Angebot</span>
+                                    <span class="value">${formatCurrency(product.offerPrice)}</span>
+                                </div>
+                                <div>
+                                    <span class="label">EUR/Ltr.</span>
+                                    <span class="value">${formatCurrency(product.pricePerLiter)}</span>
+                                </div>
+                                <div>
+                                    <span class="label">Rabatt</span>
+                                    <span class="discount">${product.discount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-order">
+                            <input type="number"
+                                   min="0"
+                                   max="${product.stock}"
+                                   value=""
+                                   data-index="${index}"
+                                   data-price="${product.offerPrice}"
+                                   oninput="calculateLine(this)"
+                                   placeholder="0">
+                            <div class="line-total" id="total-mobile-${index}">-</div>
+                        </div>
+                    </div>
+                `;
             });
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            desktopHtml += '</tbody></table></div>';
+            mobileHtml += '</div>';
+
+            container.innerHTML = desktopHtml + mobileHtml;
         }
 
         // Zeilensumme berechnen
@@ -519,12 +716,25 @@
             const quantity = parseInt(input.value) || 0;
             const total = quantity * price;
 
+            // Update Desktop
             const totalCell = document.getElementById(`total-${index}`);
-            if (quantity > 0) {
-                totalCell.textContent = formatCurrency(total);
-            } else {
-                totalCell.textContent = '-';
+            if (totalCell) {
+                totalCell.textContent = quantity > 0 ? formatCurrency(total) : '-';
             }
+
+            // Update Mobile
+            const totalMobileCell = document.getElementById(`total-mobile-${index}`);
+            if (totalMobileCell) {
+                totalMobileCell.textContent = quantity > 0 ? formatCurrency(total) : '-';
+            }
+
+            // Sync inputs between desktop and mobile
+            const allInputs = document.querySelectorAll(`input[data-index="${index}"]`);
+            allInputs.forEach(inp => {
+                if (inp !== input) {
+                    inp.value = input.value;
+                }
+            });
 
             calculateTotal();
         }
@@ -535,7 +745,8 @@
             let totalBottles = 0;
             let totalPositions = 0;
 
-            const inputs = document.querySelectorAll('input[type="number"][data-price]');
+            // Nur Desktop-Inputs zahlen (Mobile ist synchronisiert)
+            const inputs = document.querySelectorAll('.desktop-table input[type="number"][data-price]');
             inputs.forEach(input => {
                 const quantity = parseInt(input.value) || 0;
                 const price = parseFloat(input.dataset.price);
@@ -564,7 +775,7 @@
             const customerNote = document.getElementById('customerNote').value || '-';
 
             let orderLines = [];
-            const inputs = document.querySelectorAll('input[type="number"][data-price]');
+            const inputs = document.querySelectorAll('.desktop-table input[type="number"][data-price]');
 
             inputs.forEach(input => {
                 const quantity = parseInt(input.value) || 0;
@@ -612,22 +823,24 @@
 
         // PDF herunterladen
         function downloadPDF() {
-            const element = document.querySelector('.container');
+            const container = document.querySelector('.container');
             const actions = document.querySelector('.actions');
+            const mobileCards = document.querySelector('.mobile-cards');
+            const desktopTable = document.querySelector('.desktop-table');
 
-            // Buttons temporar ausblenden
+            // Fur PDF: Mobile ausblenden, Desktop anzeigen
             actions.style.display = 'none';
+            if (mobileCards) mobileCards.style.display = 'none';
+            if (desktopTable) desktopTable.style.display = 'block';
 
             const opt = {
-                margin: [10, 10, 10, 10],
+                margin: [8, 8, 8, 8],
                 filename: 'Bestellschein.pdf',
                 image: { type: 'jpeg', quality: 0.95 },
                 html2canvas: {
-                    scale: 1.5,
+                    scale: 1.2,
                     useCORS: true,
-                    logging: false,
-                    windowWidth: element.scrollWidth,
-                    windowHeight: element.scrollHeight
+                    logging: false
                 },
                 jsPDF: {
                     unit: 'mm',
@@ -635,17 +848,20 @@
                     orientation: 'portrait'
                 },
                 pagebreak: {
-                    mode: ['avoid-all', 'css', 'legacy'],
-                    before: '.category-header',
-                    avoid: ['tr', '.summary']
+                    mode: ['css', 'legacy'],
+                    avoid: ['tr', '.summary', '.category-header']
                 }
             };
 
-            html2pdf().set(opt).from(element).save().then(() => {
+            html2pdf().set(opt).from(container).save().then(() => {
                 actions.style.display = 'flex';
+                if (mobileCards) mobileCards.style.display = '';
+                if (desktopTable) desktopTable.style.display = '';
             }).catch(err => {
                 console.error('PDF Error:', err);
                 actions.style.display = 'flex';
+                if (mobileCards) mobileCards.style.display = '';
+                if (desktopTable) desktopTable.style.display = '';
                 alert('PDF-Erstellung fehlgeschlagen. Bitte nutzen Sie die Drucken-Funktion und wahlen Sie "Als PDF speichern".');
             });
         }
