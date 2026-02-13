@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bestellschein - extraprima</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Fira Sans", sans-serif;
+            background: #fff;
+            color: #333;
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e1dfdb;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .customer-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e1dfdb;
+        }
+
+        .customer-info label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .customer-info input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e1dfdb;
+            font-family: "Fira Sans", sans-serif;
+            font-size: 14px;
+        }
+
+        .customer-info input:focus {
+            outline: none;
+            border-color: #333;
+        }
+
+        .category-header {
+            background: #f8f8f7;
+            padding: 12px 15px;
+            font-weight: 600;
+            font-size: 16px;
+            border: 1px solid #e1dfdb;
+            border-bottom: none;
+            margin-top: 20px;
+        }
+
+        .category-header:first-of-type {
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+
+        thead {
+            background: #f8f8f7;
+        }
+
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #e1dfdb;
+            white-space: nowrap;
+        }
+
+        th.right, td.right {
+            text-align: right;
+        }
+
+        th.center, td.center {
+            text-align: center;
+        }
+
+        td {
+            padding: 10px;
+            border: 1px solid #e1dfdb;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        .product-name {
+            font-weight: 500;
+        }
+
+        .product-details {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .rating {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .price {
+            white-space: nowrap;
+        }
+
+        .price-original {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 11px;
+        }
+
+        .price-offer {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .discount {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .stock {
+            font-size: 12px;
+        }
+
+        .stock.low {
+            color: #c62828;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 8px;
+            border: 1px solid #e1dfdb;
+            text-align: center;
+            font-family: "Fira Sans", sans-serif;
+            font-size: 14px;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #333;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button {
+            opacity: 1;
+        }
+
+        .line-total {
+            font-weight: 600;
+            min-width: 80px;
+        }
+
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #e1dfdb;
+            background: #f8f8f7;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e1dfdb;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-row.total {
+            font-size: 20px;
+            font-weight: 700;
+            padding-top: 15px;
+        }
+
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-family: "Fira Sans", sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            background: #fff;
+            border: 1px solid #333;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        button.primary {
+            background: #333;
+            color: #fff;
+        }
+
+        button.primary:hover {
+            background: #555;
+        }
+
+        @media print {
+            .actions, .no-print {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+                font-size: 11px;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            table {
+                font-size: 10px;
+            }
+
+            th, td {
+                padding: 6px 8px;
+            }
+
+            input[type="number"] {
+                border: none;
+                background: transparent;
+                width: 50px;
+                padding: 0;
+            }
+
+            .customer-info {
+                padding: 10px;
+            }
+
+            .customer-info input {
+                border: none;
+                border-bottom: 1px solid #e1dfdb;
+                padding: 5px 0;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+
+            .rating, .product-details {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Bestellschein</h1>
+            <p class="subtitle">Bitte tragen Sie Ihre gewunschte Bestellmenge ein</p>
+        </header>
+
+        <div class="customer-info no-print-hide">
+            <div>
+                <label for="customerName">Name / Firma</label>
+                <input type="text" id="customerName" placeholder="Ihr Name oder Firmenname">
+            </div>
+            <div>
+                <label for="customerEmail">E-Mail</label>
+                <input type="email" id="customerEmail" placeholder="ihre@email.de">
+            </div>
+            <div>
+                <label for="customerPhone">Telefon</label>
+                <input type="tel" id="customerPhone" placeholder="Ihre Telefonnummer">
+            </div>
+            <div>
+                <label for="customerNote">Anmerkungen</label>
+                <input type="text" id="customerNote" placeholder="Optionale Anmerkungen">
+            </div>
+        </div>
+
+        <div id="orderTable"></div>
+
+        <div class="summary">
+            <div class="summary-row">
+                <span>Anzahl Positionen:</span>
+                <span id="totalPositions">0</span>
+            </div>
+            <div class="summary-row">
+                <span>Anzahl Flaschen:</span>
+                <span id="totalBottles">0</span>
+            </div>
+            <div class="summary-row total">
+                <span>Gesamtsumme (Brutto):</span>
+                <span id="totalSum">0,00 EUR</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="printOrder()">Drucken</button>
+            <button onclick="sendEmail()">Per E-Mail senden</button>
+            <button class="primary" onclick="downloadPDF()">Als PDF herunterladen</button>
+        </div>
+    </div>
+
+    <script>
+        // Produktdaten
+        const products = [
+            { nr: "001", category: "Schaumwein", name: "Pinot Rosa Spumante Brut - Le Contesse", rating: "extraprima 89", stock: 72, listPrice: 9.90, offerPrice: 7.90, discount: "20%" },
+            { nr: "002", category: "Schaumwein", name: "Prosecco Treviso DOC Spumante Brut Nature - Le Contesse", rating: "extraprima 89", stock: 60, listPrice: 11.90, offerPrice: 9.00, discount: "24%" },
+            { nr: "003", category: "Schaumwein", name: "Champagne Brut Blanc de Blancs Signature - Philippe Gonet", rating: "extraprima 92 | Galloni 92 | Parker 89", stock: 131, listPrice: 45.00, offerPrice: 38.00, discount: "16%" },
+            { nr: "004", category: "Schaumwein", name: "Champagne Brut Rose - Philippe Gonet", rating: "extraprima 92 | Galloni 92 | Parker 91", stock: 131, listPrice: 45.50, offerPrice: 39.00, discount: "14%" },
+            { nr: "005", category: "Schaumwein", name: "Champagne Classic Extra-Brut - Deutz", rating: "extraprima 91", stock: 17, listPrice: 57.00, offerPrice: 49.90, discount: "12%" },
+            { nr: "006", category: "Schaumwein", name: "Champagne Brut Roy Soleil Grand Cru - Philippe Gonet", rating: "extraprima 93 | Galloni 93 | Parker 92-93", stock: 193, listPrice: 58.00, offerPrice: 48.00, discount: "17%" },
+            { nr: "007", category: "Schaumwein", name: "Champagne Extra-Brut Cuvee TER Blanc de Blancs - Philippe Gonet", rating: "extraprima 93 | Parker 93", stock: 81, listPrice: 65.00, offerPrice: 49.00, discount: "25%" },
+            { nr: "008", category: "Schaumwein", name: "Champagne Brut Blanc de Blancs - Charles Heidsieck", rating: "extraprima 93 | Galloni 91 | Suckling 94 | Parker 92", stock: 107, listPrice: 74.50, offerPrice: 66.00, discount: "11%" },
+            { nr: "009", category: "Schaumwein", name: "Champagne Brut Blanc de Blancs - Deutz 2017", rating: "extraprima 94 | Galloni 91 | Suckling 95", stock: 38, listPrice: 92.50, offerPrice: 79.00, discount: "15%" },
+            { nr: "010", category: "Schaumwein", name: "Champagne Brut Pinot Noir Meurtet Hommage a William Deutz 2015", rating: "extraprima 95 | Suckling 93 | Parker 94", stock: 18, listPrice: 128.00, offerPrice: 99.00, discount: "23%" },
+            { nr: "011", category: "Schaumwein", name: "Champagne Brut Pinot Noir Cote Glaciere Hommage a William Deutz 2015", rating: "extraprima 95 | Suckling 96", stock: 10, listPrice: 128.00, offerPrice: 99.00, discount: "23%" },
+            { nr: "012", category: "Schaumwein", name: "Champagne Brut Pinot Noir Meurtet Hommage a William Deutz 2018", rating: "Galloni 96 | Suckling 95", stock: 17, listPrice: 135.00, offerPrice: 112.50, discount: "17%" },
+            { nr: "013", category: "Schaumwein", name: "Champagne Brut Pinot Noir Cote Glaciere Hommage a William Deutz 2018", rating: "Galloni 95 | Suckling 94", stock: 17, listPrice: 135.00, offerPrice: 112.50, discount: "17%" },
+            { nr: "014", category: "Schaumwein", name: "Champagne Brut Millesime - Deutz 2016 | MAG 1,5-Ltr.", rating: "extraprima 93 | Suckling 94", stock: 12, listPrice: 159.00, offerPrice: 123.00, discount: "23%" },
+            { nr: "015", category: "Schaumwein", name: "Champagne Brut Pinot Noir Meurtet Hommage a William Deutz 2012 | DMG 3,0-Ltr.", rating: "extraprima 94 | Suckling 93 | Parker 93", stock: 4, listPrice: 720.00, offerPrice: 555.00, discount: "23%" },
+            { nr: "016", category: "Schaumwein", name: "Champagne Brut Blanc de Blancs Signature - Philippe Gonet | MATHUSALEM 6-Ltr.", rating: "extraprima 92 | Galloni 92 | Parker 89", stock: 2, listPrice: 799.00, offerPrice: 666.00, discount: "17%" },
+            { nr: "017", category: "Schaumwein", name: "Domaine Laurence Rose - VdP de l'Atlantique 2024", rating: "extraprima 91", stock: 324, listPrice: 9.50, offerPrice: 7.90, discount: "17%" },
+            { nr: "018", category: "Schaumwein", name: "Etna Rosato - Tenuta delle Terre Nere 2024 -bio-", rating: "extraprima 92 | Galloni 91 | Suckling 94", stock: 177, listPrice: 22.50, offerPrice: 18.00, discount: "20%" },
+            { nr: "019", category: "Schaumwein", name: "Ad Astra Marguerite Rose - Coume del Mas 2024", rating: "extraprima 93", stock: 171, listPrice: 24.50, offerPrice: 19.00, discount: "22%" },
+
+            { nr: "021", category: "Weisswein | Deutschland", name: "Weissburgunder 5zig 5zig denkstoff - Weingut Enk 2023", rating: "extraprima 92", stock: 107, listPrice: 10.50, offerPrice: 8.50, discount: "19%" },
+            { nr: "022", category: "Weisswein | Deutschland", name: "Chardonnay entre nous denkstoff - Weingut Enk 2022", rating: "extraprima 92", stock: 241, listPrice: 12.50, offerPrice: 8.90, discount: "29%" },
+            { nr: "023", category: "Weisswein | Deutschland", name: "Sauvignon blanc Saft und Seide - Weingut Meier 2023 -bio-", rating: "extraprima 92-93", stock: 425, listPrice: 18.90, offerPrice: 15.00, discount: "21%" },
+            { nr: "024", category: "Weisswein | Deutschland", name: "Sauvignon Blanc Touche - Qualitatswein Pfalz 2022", rating: "extraprima 94", stock: 400, listPrice: 26.50, offerPrice: 19.00, discount: "28%" },
+            { nr: "025", category: "Weisswein | Deutschland", name: "Sauvignon Blanc Mineral denkstoff - Weingut Enk 2023 | MAG 1,5-Ltr.", rating: "extraprima 92", stock: 60, listPrice: 24.50, offerPrice: 19.90, discount: "19%" },
+            { nr: "026", category: "Weisswein | Deutschland", name: "Chenin Blanc Herzog - Oliver Zeter 2021", rating: "extraprima 94", stock: 114, listPrice: 41.50, offerPrice: 35.00, discount: "16%" },
+            { nr: "027", category: "Weisswein | Deutschland", name: "Riesling Uhlen B Blaufusser Lay GG - Heymann-Lowenstein 2021", rating: "extraprima 94 | Suckling 95", stock: 23, listPrice: 49.00, offerPrice: 39.00, discount: "20%" },
+            { nr: "028", category: "Weisswein | Deutschland", name: "Sauvignon Blanc Touche - Qualitatswein Pfalz 2022 | MAG 1,5-Ltr.", rating: "extraprima 94", stock: 19, listPrice: 56.00, offerPrice: 44.00, discount: "21%" },
+            { nr: "029", category: "Weisswein | Deutschland", name: "Riesling Monte Nostrum - Weingut Robert Weil 2022", rating: "Suckling 99 | Parker 96", stock: 35, listPrice: 85.00, offerPrice: 66.00, discount: "22%" },
+            { nr: "030", category: "Weisswein | Deutschland", name: "Riesling Scharzhofberger 'P' Pergentsknopp GG - Van Volxem 2022", rating: "extraprima 96 | Galloni 95 | Suckling 95 | Parker 93", stock: 40, listPrice: 89.00, offerPrice: 69.00, discount: "22%" },
+            { nr: "031", category: "Weisswein | Deutschland", name: "Sauvignon Blanc Touche - Qualitatswein Pfalz 2022 | DMG 3,0-Ltr.", rating: "extraprima 94", stock: 28, listPrice: 120.00, offerPrice: 78.00, discount: "35%" },
+
+            { nr: "032", category: "Weisswein | Italien", name: "Soave Broia - Roccolo Grassi 2021", rating: "extraprima 93", stock: 45, listPrice: 14.50, offerPrice: 12.00, discount: "17%" },
+            { nr: "033", category: "Weisswein | Italien", name: "Lugana Prestigioso - Feliciana 2024", rating: "extraprima 92", stock: 38, listPrice: 15.90, offerPrice: 12.00, discount: "25%" },
+            { nr: "034", category: "Weisswein | Italien", name: "Roero Arneis - Vietti 2023", rating: "extraprima 92", stock: 77, listPrice: 19.50, offerPrice: 17.50, discount: "10%" },
+            { nr: "035", category: "Weisswein | Italien", name: "Timorasso Colli Tortonesi Derthona - Vietti 2022", rating: "Galloni 94 | Parker 94", stock: 30, listPrice: 30.00, offerPrice: 25.00, discount: "17%" },
+
+            { nr: "037", category: "Weisswein | Frankreich", name: "Touraine Sauvignon - Domaine de l'Aumonier 2022 -bio-", rating: "extraprima 91-92", stock: 174, listPrice: 11.00, offerPrice: 8.00, discount: "27%" },
+            { nr: "038", category: "Weisswein | Frankreich", name: "Cap au Sud Chardonnay Vin de France - Francois Carillon 2021", rating: "extraprima 89-90", stock: 66, listPrice: 21.50, offerPrice: 17.50, discount: "19%" },
+            { nr: "039", category: "Weisswein | Frankreich", name: "Bourgogne Aligote Corvee de l'Eglise - Henri Richard 2021 -bio-", rating: "extraprima 92", stock: 92, listPrice: 25.50, offerPrice: 19.90, discount: "22%" },
+            { nr: "040", category: "Weisswein | Frankreich", name: "Bourgogne Aligote Corvee de l'Eglise - Henri Richard 2022 -bio-", rating: "extraprima 91", stock: 179, listPrice: 26.50, offerPrice: 20.50, discount: "23%" },
+            { nr: "041", category: "Weisswein | Frankreich", name: "Riesling Reserve - Domaine Trimbach 2022", rating: "extraprima 92 | Galloni 92 | Suckling 94", stock: 102, listPrice: 25.50, offerPrice: 20.50, discount: "20%" },
+            { nr: "042", category: "Weisswein | Frankreich", name: "Cote de Nuits Village blanc Vignois - Henri Richard 2021 -bio-", rating: "extraprima 92", stock: 56, listPrice: 39.90, offerPrice: 32.00, discount: "20%" },
+            { nr: "043", category: "Weisswein | Frankreich", name: "Cote de Nuits Village blanc Vignois - Henri Richard 2022 -bio-", rating: "extraprima 93", stock: 72, listPrice: 44.50, offerPrice: 35.00, discount: "21%" },
+            { nr: "044", category: "Weisswein | Frankreich", name: "Condrieu Lone - Julien Pilon 2023", rating: "extraprima 94-95", stock: 94, listPrice: 48.50, offerPrice: 39.00, discount: "20%" },
+            { nr: "045", category: "Weisswein | Frankreich", name: "Montlouis Le Grand Clos - Rocher des Violettes 2022 -bio- | MAG 1,5-Ltr.", rating: "extraprima 94-95", stock: 18, listPrice: 54.00, offerPrice: 44.00, discount: "19%" },
+            { nr: "046", category: "Weisswein | Frankreich", name: "Meursault 1er Cru Chateau de Blagny - Louis Latour 2022", rating: "extraprima 93 | Suckling 95", stock: 12, listPrice: 132.00, offerPrice: 119.00, discount: "10%" },
+            { nr: "047", category: "Weisswein | Frankreich", name: "Corton-Charlemagne Grand Cru - Louis Latour 2022", rating: "extraprima 95 | Suckling 99", stock: 14, listPrice: 238.00, offerPrice: 189.00, discount: "21%" },
+            { nr: "048", category: "Weisswein | Frankreich", name: "Corton-Charlemagne Grand Cru - Louis Latour 2019 | MAG 1,5-Ltr.", rating: "extraprima 96 | Suckling 98", stock: 4, listPrice: 389.00, offerPrice: 299.00, discount: "23%" }
+        ];
+
+        // Tabelle rendern
+        function renderTable() {
+            const container = document.getElementById('orderTable');
+            let html = '';
+            let currentCategory = '';
+
+            products.forEach((product, index) => {
+                // Kategorie-Header
+                if (product.category !== currentCategory) {
+                    if (currentCategory !== '') {
+                        html += '</tbody></table>';
+                    }
+                    currentCategory = product.category;
+                    html += `
+                        <div class="category-header">${currentCategory}</div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Nr.</th>
+                                    <th>Produkt</th>
+                                    <th style="width: 80px;" class="center">Bestand</th>
+                                    <th style="width: 100px;" class="right">Listenpreis</th>
+                                    <th style="width: 100px;" class="right">Angebot</th>
+                                    <th style="width: 70px;" class="center">Rabatt</th>
+                                    <th style="width: 80px;" class="center">Menge</th>
+                                    <th style="width: 100px;" class="right">Summe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                }
+
+                const stockClass = product.stock <= 10 ? 'low' : '';
+
+                html += `
+                    <tr>
+                        <td>${product.nr}</td>
+                        <td>
+                            <div class="product-name">${product.name}</div>
+                            <div class="rating">${product.rating}</div>
+                        </td>
+                        <td class="center stock ${stockClass}">${product.stock}</td>
+                        <td class="right price">
+                            <span class="price-original">${formatCurrency(product.listPrice)}</span>
+                        </td>
+                        <td class="right price">
+                            <span class="price-offer">${formatCurrency(product.offerPrice)}</span>
+                        </td>
+                        <td class="center">
+                            <span class="discount">${product.discount}</span>
+                        </td>
+                        <td class="center">
+                            <input type="number"
+                                   min="0"
+                                   max="${product.stock}"
+                                   value=""
+                                   data-index="${index}"
+                                   data-price="${product.offerPrice}"
+                                   oninput="calculateLine(this)"
+                                   placeholder="0">
+                        </td>
+                        <td class="right line-total" id="total-${index}">-</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Zeilensumme berechnen
+        function calculateLine(input) {
+            const index = input.dataset.index;
+            const price = parseFloat(input.dataset.price);
+            const quantity = parseInt(input.value) || 0;
+            const total = quantity * price;
+
+            const totalCell = document.getElementById(`total-${index}`);
+            if (quantity > 0) {
+                totalCell.textContent = formatCurrency(total);
+            } else {
+                totalCell.textContent = '-';
+            }
+
+            calculateTotal();
+        }
+
+        // Gesamtsumme berechnen
+        function calculateTotal() {
+            let totalSum = 0;
+            let totalBottles = 0;
+            let totalPositions = 0;
+
+            const inputs = document.querySelectorAll('input[type="number"][data-price]');
+            inputs.forEach(input => {
+                const quantity = parseInt(input.value) || 0;
+                const price = parseFloat(input.dataset.price);
+                if (quantity > 0) {
+                    totalSum += quantity * price;
+                    totalBottles += quantity;
+                    totalPositions++;
+                }
+            });
+
+            document.getElementById('totalSum').textContent = formatCurrency(totalSum);
+            document.getElementById('totalBottles').textContent = totalBottles;
+            document.getElementById('totalPositions').textContent = totalPositions;
+        }
+
+        // Wahrung formatieren
+        function formatCurrency(value) {
+            return value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR';
+        }
+
+        // Bestellung als Text generieren
+        function generateOrderText() {
+            const customerName = document.getElementById('customerName').value || '-';
+            const customerEmail = document.getElementById('customerEmail').value || '-';
+            const customerPhone = document.getElementById('customerPhone').value || '-';
+            const customerNote = document.getElementById('customerNote').value || '-';
+
+            let orderLines = [];
+            const inputs = document.querySelectorAll('input[type="number"][data-price]');
+
+            inputs.forEach(input => {
+                const quantity = parseInt(input.value) || 0;
+                if (quantity > 0) {
+                    const index = input.dataset.index;
+                    const product = products[index];
+                    const total = quantity * product.offerPrice;
+                    orderLines.push(`${product.nr} | ${product.name} | ${quantity} x ${formatCurrency(product.offerPrice)} = ${formatCurrency(total)}`);
+                }
+            });
+
+            const totalSum = document.getElementById('totalSum').textContent;
+            const totalBottles = document.getElementById('totalBottles').textContent;
+
+            let text = `BESTELLUNG\n`;
+            text += `==========================================\n\n`;
+            text += `Kunde: ${customerName}\n`;
+            text += `E-Mail: ${customerEmail}\n`;
+            text += `Telefon: ${customerPhone}\n`;
+            text += `Anmerkungen: ${customerNote}\n\n`;
+            text += `==========================================\n`;
+            text += `BESTELLTE ARTIKEL:\n`;
+            text += `==========================================\n\n`;
+            text += orderLines.join('\n');
+            text += `\n\n==========================================\n`;
+            text += `Anzahl Flaschen: ${totalBottles}\n`;
+            text += `GESAMTSUMME: ${totalSum}\n`;
+            text += `==========================================\n`;
+
+            return text;
+        }
+
+        // Drucken
+        function printOrder() {
+            window.print();
+        }
+
+        // E-Mail senden
+        function sendEmail() {
+            const orderText = generateOrderText();
+            const subject = encodeURIComponent('Weinbestellung');
+            const body = encodeURIComponent(orderText);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        // PDF herunterladen
+        function downloadPDF() {
+            const element = document.querySelector('.container');
+            const actions = document.querySelector('.actions');
+
+            // Buttons temporar ausblenden
+            actions.style.display = 'none';
+
+            const opt = {
+                margin: 10,
+                filename: 'Bestellschein.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                actions.style.display = 'flex';
+            });
+        }
+
+        // Initialisieren
+        renderTable();
+    </script>
+</body>
+</html>
