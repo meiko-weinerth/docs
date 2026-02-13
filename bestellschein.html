@@ -297,6 +297,30 @@
             h1 {
                 font-size: 22px;
             }
+
+            .category-header {
+                page-break-before: auto;
+                break-before: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            .summary {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+
+        /* PDF-spezifische Styles */
+        .pdf-mode table {
+            font-size: 11px;
+        }
+
+        .pdf-mode .rating {
+            font-size: 9px;
         }
 
         @media (max-width: 900px) {
@@ -595,15 +619,34 @@
             actions.style.display = 'none';
 
             const opt = {
-                margin: 10,
+                margin: [10, 10, 10, 10],
                 filename: 'Bestellschein.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                image: { type: 'jpeg', quality: 0.95 },
+                html2canvas: {
+                    scale: 1.5,
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: element.scrollWidth,
+                    windowHeight: element.scrollHeight
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    before: '.category-header',
+                    avoid: ['tr', '.summary']
+                }
             };
 
             html2pdf().set(opt).from(element).save().then(() => {
                 actions.style.display = 'flex';
+            }).catch(err => {
+                console.error('PDF Error:', err);
+                actions.style.display = 'flex';
+                alert('PDF-Erstellung fehlgeschlagen. Bitte nutzen Sie die Drucken-Funktion und wahlen Sie "Als PDF speichern".');
             });
         }
 
